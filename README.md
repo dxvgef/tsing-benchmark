@@ -40,7 +40,7 @@ BenchmarkGinRecover-4                     22995             52700 ns/op         
 仅以最小功能测试时，httprouter的执行效率最好，因为它实现的功能最少。echo其次，tsing相比gin有微弱的优势，但是非常接近。
 <br>排名依次是httprouter、echo、tsing、gin
 
-但是开启了recover机制，各框架的性能都有不同程度的降低，httprouter依然表现最好，tsing也有明显的影响，但是echo和gin的影响较大，echo则是降低了近一倍的性能。而且也不再是零内存分配。
+但是开启了recover机制，各框架的性能都有不同程度的降低，httprouter依然表现最好，tsing也有明显的影响，echo和gin的影响较大，echo则是降低了近一倍的性能。而且也不再是零内存分配。
 <br>排名依次是httprouter、tsing、gin、echo
 
 在参与测试的框架里对执行效率和功能完备之间做折中选择，tsing可能最好。
