@@ -24,7 +24,7 @@ func init() {
 	calcMem("HttpRouter", func() {
 		router := httprouter.New()
 		// 启用recover
-		// router.PanicHandler = func(writer http.ResponseWriter, request *http.Request, i interface{}) {}
+		router.PanicHandler = func(writer http.ResponseWriter, request *http.Request, i interface{}) {}
 
 		// router.NotFound = http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {})
 		// router.HandleMethodNotAllowed = true
@@ -36,6 +36,38 @@ func init() {
 			router.Handle(route.Method, route.Path, handler)
 		}
 		httprouterApp = router
+	})
+
+	calcMem("Tsing", func() {
+		path, err := os.Getwd()
+		if err != nil {
+			os.Exit(1)
+		}
+		config := tsing.Config{
+			RootPath:              path,
+			RedirectTrailingSlash: false,
+			HandleOPTIONS:         false,
+			FixPath:               false,
+			Recover:               true,
+			EventHandler: func(event *tsing.Event) {
+
+			},
+			ErrorEvent:            false,
+			NotFoundEvent:         false,
+			MethodNotAllowedEvent: false,
+			Trigger:               false,
+			Trace:                 false,
+			ShortPath:             false,
+		}
+		app := tsing.New(&config)
+		handler := func(ctx *tsing.Context) error {
+			ctx.ResponseWriter.WriteHeader(204)
+			return nil
+		}
+		for _, route := range githubAPI {
+			app.Router.Handle(route.Method, route.Path, handler)
+		}
+		tsingApp = app
 	})
 
 	calcMem("Echo", func() {
@@ -66,62 +98,14 @@ func init() {
 		ginApp = app
 	})
 
-	calcMem("Tsing", func() {
-		path, err := os.Getwd()
-		if err != nil {
-			os.Exit(1)
-		}
-		// 通常用的配置
-		regular := tsing.Config{
-			RootPath:              path,
-			RedirectTrailingSlash: true,
-			HandleOPTIONS:         true,
-			FixPath:               true,
-			Recover:               false,
-			EventHandler: func(event *tsing.Event) {
-
-			},
-			ErrorEvent:            true,
-			NotFoundEvent:         false,
-			MethodNotAllowedEvent: false,
-			Trigger:               false,
-			Trace:                 false,
-			ShortPath:             true,
-		}
-		// 最高性能配置
-		// performance := tsing.Config{
-		// 	RootPath:              path,
-		// 	RedirectTrailingSlash: false,
-		// 	HandleOPTIONS:         false,
-		// 	FixPath:               false,
-		// 	Recover:               false,
-		// 	EventHandler:          nil,
-		// 	ErrorEvent:            false,
-		// 	NotFoundEvent:         false,
-		// 	MethodNotAllowedEvent: false,
-		// 	Trigger:               false,
-		// 	Trace:                 false,
-		// 	ShortPath:             false,
-		// }
-		app := tsing.New(&regular)
-		handler := func(ctx *tsing.Context) error {
-			ctx.ResponseWriter.WriteHeader(204)
-			return nil
-		}
-		for _, route := range githubAPI {
-			app.Router.Handle(route.Method, route.Path, handler)
-		}
-		tsingApp = app
-	})
-
-}
-
-func BenchmarkTsing(b *testing.B) {
-	benchRoutes(b, tsingApp, githubAPI)
 }
 
 func BenchmarkHttpRouter(b *testing.B) {
 	benchRoutes(b, httprouterApp, githubAPI)
+}
+
+func BenchmarkTsing(b *testing.B) {
+	benchRoutes(b, tsingApp, githubAPI)
 }
 
 func BenchmarkEcho(b *testing.B) {
