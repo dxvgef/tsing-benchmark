@@ -30,6 +30,35 @@ func init() {
 		os.Exit(1)
 	}
 
+	// --------------------- tsing -----------------------------
+	var tsingHandler = func(ctx *tsing.Context) error {
+		ctx.ResponseWriter.WriteHeader(204)
+		return nil
+	}
+	calcMem("tsing", func() {
+		app := tsing.New(&tsing.Config{})
+		for _, route := range githubAPI {
+			app.Router.Handle(route.Method, route.Path, tsingHandler)
+		}
+		tsingApp = app
+	})
+	calcMem("tsing recover", func() {
+		config := tsing.Config{
+			RootPath:           path,
+			UnescapePathValues: true,
+			EventTrace:         true,
+			EventSource:        true,
+			EventShortPath:     true,
+			Recover:            true,
+			EventHandler:       func(e *tsing.Event) {},
+		}
+		app := tsing.New(&config)
+		for _, route := range githubAPI {
+			app.Router.Handle(route.Method, route.Path, tsingHandler)
+		}
+		tsingRecoverApp = app
+	})
+
 	// --------------------- httprouter -----------------------------
 	var httprouterHandler = func(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 		w.WriteHeader(204)
@@ -41,7 +70,7 @@ func init() {
 		}
 		httprouterApp = router
 	})
-	calcMem("httprouterRecover", func() {
+	calcMem("httprouter recover", func() {
 		router := httprouter.New()
 		// 启用recover
 		router.PanicHandler = func(writer http.ResponseWriter, request *http.Request, i interface{}) {}
@@ -54,32 +83,27 @@ func init() {
 		httprouterRecoverApp = router
 	})
 
-	// --------------------- tsing -----------------------------
-	var tsingHandler = func(ctx *tsing.Context) error {
-		ctx.ResponseWriter.WriteHeader(204)
-		return nil
+	// --------------------- gin -----------------------------
+	var ginHandler = func(ctx *gin.Context) {
+		ctx.Writer.WriteHeader(204)
 	}
-	calcMem("tsing", func() {
-		config := tsing.Config{
-			RootPath: path,
-		}
-		app := tsing.New(&config)
+	calcMem("gin", func() {
+		gin.SetMode(gin.ReleaseMode)
+		app := gin.New()
 		for _, route := range githubAPI {
-			app.Router.Handle(route.Method, route.Path, tsingHandler)
+			app.Handle(route.Method, route.Path, ginHandler)
 		}
-		tsingApp = app
+		ginApp = app
 	})
-	calcMem("tsingRecover", func() {
-		config := tsing.Config{
-			RootPath:     path,
-			Recover:      true,
-			EventHandler: func(event *tsing.Event) {},
-		}
-		app := tsing.New(&config)
+	calcMem("gin recover", func() {
+		gin.SetMode(gin.ReleaseMode)
+		app := gin.New()
+		// 启用gin的recover
+		app.Use(gin.Recovery())
 		for _, route := range githubAPI {
-			app.Router.Handle(route.Method, route.Path, tsingHandler)
+			app.Handle(route.Method, route.Path, ginHandler)
 		}
-		tsingRecoverApp = app
+		ginRecoverApp = app
 	})
 
 	// --------------------- echo -----------------------------
@@ -94,7 +118,7 @@ func init() {
 		}
 		echoApp = app
 	})
-	calcMem("echoRecover", func() {
+	calcMem("echo recover", func() {
 		app := echo.New()
 		// 启用echo的recover
 		app.Use(middleware.Recover())
@@ -104,55 +128,32 @@ func init() {
 		echoRecoverApp = app
 	})
 
-	// --------------------- echo -----------------------------
-	var ginHandler = func(ctx *gin.Context) {
-		ctx.Writer.WriteHeader(204)
-	}
-	calcMem("gin", func() {
-		gin.SetMode(gin.ReleaseMode)
-		app := gin.New()
-		for _, route := range githubAPI {
-			app.Handle(route.Method, route.Path, ginHandler)
-		}
-		ginApp = app
-	})
-	calcMem("ginRecover", func() {
-		gin.SetMode(gin.ReleaseMode)
-		app := gin.New()
-		// 启用gin的recover
-		app.Use(gin.Recovery())
-		for _, route := range githubAPI {
-			app.Handle(route.Method, route.Path, ginHandler)
-		}
-		ginRecoverApp = app
-	})
-
 }
 
-func BenchmarkHttprouter(b *testing.B) {
-	benchRoutes(b, httprouterApp, githubAPI)
-}
-func BenchmarkHttprouterRecover(b *testing.B) {
-	benchRoutes(b, httprouterRecoverApp, githubAPI)
-}
-
-func BenchmarkTsing(b *testing.B) {
+func Benchmark_Tsing(b *testing.B) {
 	benchRoutes(b, tsingApp, githubAPI)
 }
-func BenchmarkTsingRecover(b *testing.B) {
+func Benchmark_Tsing_Recover(b *testing.B) {
 	benchRoutes(b, tsingRecoverApp, githubAPI)
 }
 
-func BenchmarkEcho(b *testing.B) {
-	benchRoutes(b, echoApp, githubAPI)
+func Benchmark_Httprouter(b *testing.B) {
+	benchRoutes(b, httprouterApp, githubAPI)
 }
-func BenchmarkEchoRecover(b *testing.B) {
-	benchRoutes(b, echoRecoverApp, githubAPI)
+func Benchmark_Httprouter_Recover(b *testing.B) {
+	benchRoutes(b, httprouterRecoverApp, githubAPI)
 }
 
-func BenchmarkGin(b *testing.B) {
+func Benchmark_Gin(b *testing.B) {
 	benchRoutes(b, ginApp, githubAPI)
 }
-func BenchmarkGinRecover(b *testing.B) {
+func Benchmark_Gin_Recover(b *testing.B) {
 	benchRoutes(b, ginRecoverApp, githubAPI)
+}
+
+func Benchmark_Echo(b *testing.B) {
+	benchRoutes(b, echoApp, githubAPI)
+}
+func Benchmark_Echo_Recover(b *testing.B) {
+	benchRoutes(b, echoRecoverApp, githubAPI)
 }
