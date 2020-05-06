@@ -88,6 +88,9 @@ func (p Engine) matchPath(reqHost, reqPath string) (string, bool) {
 		reqPath = reqPath[:pos]
 	}
 	reqPath = reqPath + "*"
+	if _, exist := p.hosts[reqHost][reqPath]; exist {
+		return reqPath, true
+	}
 	return reqPath, false
 }
 
