@@ -10,6 +10,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+
+	tsing_gateway "github.com/dxvgef/tsing-benchmark/tsing-gateway"
 )
 
 var (
@@ -21,6 +23,7 @@ var (
 	echoRecoverApp       http.Handler
 	ginApp               http.Handler
 	ginRecoverApp        http.Handler
+	tsingGateway         http.Handler
 )
 
 // nolint
@@ -128,11 +131,24 @@ func init() {
 		echoRecoverApp = app
 	})
 
+	// --------------------- tsing gateway -----------------------------
+	// 初始化路由器
+	calcMem("tsing gateway", func() {
+		app := tsing_gateway.New()
+		for _, route := range githubAPI {
+			app.PutRoute("*", route.Path, route.Method, tsing_gateway.RouteNode{
+				Service: route.Path,
+			})
+		}
+		tsingGateway = app
+	})
+
 }
 
 func Benchmark_Tsing(b *testing.B) {
 	benchRoutes(b, tsingApp, githubAPI)
 }
+
 func Benchmark_Tsing_Recover(b *testing.B) {
 	benchRoutes(b, tsingRecoverApp, githubAPI)
 }
@@ -140,6 +156,7 @@ func Benchmark_Tsing_Recover(b *testing.B) {
 func Benchmark_Httprouter(b *testing.B) {
 	benchRoutes(b, httprouterApp, githubAPI)
 }
+
 func Benchmark_Httprouter_Recover(b *testing.B) {
 	benchRoutes(b, httprouterRecoverApp, githubAPI)
 }
@@ -147,6 +164,7 @@ func Benchmark_Httprouter_Recover(b *testing.B) {
 func Benchmark_Gin(b *testing.B) {
 	benchRoutes(b, ginApp, githubAPI)
 }
+
 func Benchmark_Gin_Recover(b *testing.B) {
 	benchRoutes(b, ginRecoverApp, githubAPI)
 }
@@ -156,4 +174,8 @@ func Benchmark_Echo(b *testing.B) {
 }
 func Benchmark_Echo_Recover(b *testing.B) {
 	benchRoutes(b, echoRecoverApp, githubAPI)
+}
+
+func Benchmark_TsingGateway(b *testing.B) {
+	benchRoutes(b, tsingGateway, githubAPI)
 }
