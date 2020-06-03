@@ -1,17 +1,18 @@
 package tsing_benchmark
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"testing"
 
 	"github.com/dxvgef/tsing"
 	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi"
+	chiMiddleware "github.com/go-chi/chi/middleware"
 	"github.com/julienschmidt/httprouter"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-
-	tsing_gateway "github.com/dxvgef/tsing-benchmark/tsing-gateway"
 )
 
 var (
@@ -23,11 +24,13 @@ var (
 	echoRecoverApp       http.Handler
 	ginApp               http.Handler
 	ginRecoverApp        http.Handler
-	tsingGateway         http.Handler
+	chiApp               http.Handler
+	chiRecoverApp        http.Handler
 )
 
 // nolint
 func init() {
+	log.SetFlags(log.Lshortfile)
 	path, err := os.Getwd()
 	if err != nil {
 		os.Exit(1)
@@ -131,18 +134,25 @@ func init() {
 		echoRecoverApp = app
 	})
 
-	// --------------------- tsing gateway -----------------------------
-	// 初始化路由器
-	calcMem("tsing gateway", func() {
-		app := tsing_gateway.New()
+	// --------------------- chi -----------------------------
+	var chiHandler = func(resp http.ResponseWriter, req *http.Request) {
+		resp.WriteHeader(204)
+	}
+	calcMem("chi", func() {
+		app := chi.NewRouter()
 		for _, route := range githubAPI {
-			app.PutRoute("*", route.Path, route.Method, tsing_gateway.RouteNode{
-				Service: route.Path,
-			})
+			app.MethodFunc(route.Method, route.Path, chiHandler)
 		}
-		tsingGateway = app
+		chiApp = app
 	})
-
+	calcMem("chi recover", func() {
+		app := chi.NewRouter()
+		app.Use(chiMiddleware.Recoverer)
+		for _, route := range githubAPI {
+			app.MethodFunc(route.Method, route.Path, chiHandler)
+		}
+		chiRecoverApp = app
+	})
 }
 
 func Benchmark_Tsing(b *testing.B) {
@@ -176,6 +186,9 @@ func Benchmark_Echo_Recover(b *testing.B) {
 	benchRoutes(b, echoRecoverApp, githubAPI)
 }
 
-func Benchmark_TsingGateway(b *testing.B) {
-	benchRoutes(b, tsingGateway, githubAPI)
+func Benchmark_chi(b *testing.B) {
+	benchRoutes(b, chiApp, githubAPI)
+}
+func Benchmark_chi_Recover(b *testing.B) {
+	benchRoutes(b, chiRecoverApp, githubAPI)
 }
