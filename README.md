@@ -1,9 +1,9 @@
 # tsing-benchmark
-`Tsing v1.3.10`框架与以下框架的路由基准测试
-- github.com/julienschmidt/httprouter [v1.3.0]
-- github.com/labstack/echo [v4.1.17]
-- github.com/gin-gonic/gin [v1.6.2]
-- github.com/go-chi/chi [v4.1.2]
+`Tsing v1.4.2`框架与以下框架的路由基准测试
+- github.com/julienschmidt/httprouter
+- github.com/labstack/echo
+- github.com/gin-gonic/gin
+- github.com/go-chi/chi
 
 同时测试了启用和禁用`recover`的两种情况
 

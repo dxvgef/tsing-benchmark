@@ -8,8 +8,8 @@ import (
 
 	"github.com/dxvgef/tsing"
 	"github.com/gin-gonic/gin"
-	"github.com/go-chi/chi"
-	chiMiddleware "github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/julienschmidt/httprouter"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -42,7 +42,7 @@ func init() {
 		return nil
 	}
 	calcMem("tsing", func() {
-		app := tsing.New(tsing.Config{})
+		app := tsing.New(&tsing.Config{})
 		for _, route := range githubAPI {
 			app.Router.Handle(route.Method, route.Path, tsingHandler)
 		}
@@ -56,9 +56,9 @@ func init() {
 			EventSource:        true,
 			EventShortPath:     true,
 			Recover:            true,
-			EventHandler:       func(e tsing.Event) {},
+			EventHandler:       func(e *tsing.Event) {},
 		}
-		app := tsing.New(config)
+		app := tsing.New(&config)
 		for _, route := range githubAPI {
 			app.Router.Handle(route.Method, route.Path, tsingHandler)
 		}
