@@ -3,7 +3,7 @@ module github.com/dxvgef/tsing-benchmark
 go 1.16
 
 require (
-	github.com/dxvgef/tsing v1.4.2
+	github.com/dxvgef/tsing v1.5.0
 	github.com/gin-gonic/gin v1.7.1
 	github.com/go-chi/chi/v5 v5.0.2
 	github.com/golang/protobuf v1.4.2 // indirect
