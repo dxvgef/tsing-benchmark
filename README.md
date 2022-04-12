@@ -1,5 +1,5 @@
 # tsing-benchmark
-`Tsing v1.4.2`框架与以下框架的路由基准测试
+`Tsing v1.5.0`框架与以下框架的路由基准测试
 - github.com/julienschmidt/httprouter
 - github.com/labstack/echo
 - github.com/gin-gonic/gin
